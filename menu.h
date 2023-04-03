@@ -23,19 +23,37 @@ struct Menu_Struct {
 };
 
 extern Menu_t Member1;
+	extern Menu_t Member1_1;
+	extern Menu_t Member1_2;
+	extern Menu_t Member1_3;
 extern Menu_t Member2;
+	extern Menu_t Member2_1;
+	extern Menu_t Member2_2;
+	extern Menu_t Member2_3;
 extern Menu_t Member3;
+	extern Menu_t Member3_1;
 extern Menu_t Member4;
+	extern Menu_t Member4_1;
 extern Menu_t Member5;
+	extern Menu_t Member5_1;
 extern Menu_t Member6;
+	extern Menu_t Member6_1;
 extern Menu_t Member7;
+	extern Menu_t Member7_1;
 extern Menu_t Member8;
+	extern Menu_t Member8_1;
 extern Menu_t Member9;
+	extern Menu_t Member9_1;
 extern Menu_t Member10;
+	extern Menu_t Member10_1;
 extern Menu_t Member11;
+	extern Menu_t Member11_1;
 
 
 void Menu_RefreshScreen(void);
 void Menu_Next(void);
 void Menu_Prev(void);
+void Menu_Select(void);
+void Menu_Back(void);
+uint8_t Menu_CountMembers(void);
 #endif /* MENU_MENU_H_ */
