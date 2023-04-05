@@ -17,6 +17,11 @@ uint8_t MenuCurrentIndex;
 Menu_t *FirstMemberToDisplayPtr = MENU_FIRST_MEMBER;
 uint8_t FirstMemberToDisplayNumber;
 
+
+uint8_t LevelsIndexes[MENU_MAX_LEVELS_NUMBER];
+uint8_t LevelsFirstMembersToDisplay[MENU_MAX_LEVELS_NUMBER];
+uint8_t MenuLevel;
+
 /*--------------Name, *Next, *Prev, *Child, *Parent, *Function---
  * WARNING: First member's *Prev pointer have to be NULL,
  * & Last member's *Next pointer have to be NULL!  */
@@ -67,14 +72,14 @@ void Menu_RefreshScreen(void)
 
 	if(LastMenuPtr == MenuCurrentMember) return;
 
-	while(MenuCurrentIndex > (FirstMemberToDisplayNumber + MENU_ROWS_TO_DISPLAY - 1) )		//while our menu member is in out of screen range...
+	while(LevelsIndexes[MenuLevel] > (LevelsFirstMembersToDisplay[MenuLevel] + MENU_ROWS_TO_DISPLAY - 1) )		//while our menu member is in out of screen range...
 	{
-		FirstMemberToDisplayNumber++;														//"scroll down" by increasing first to display member
+		LevelsFirstMembersToDisplay[MenuLevel]++;														//"scroll down" by increasing first to display member
 		FirstMemberToDisplayPtr = FirstMemberToDisplayPtr->Next;
 	}
-	while(MenuCurrentIndex < FirstMemberToDisplayNumber )
+	while(LevelsIndexes[MenuLevel] < LevelsFirstMembersToDisplay[MenuLevel] )
 	{
-		FirstMemberToDisplayNumber--;														//or "scroll up"
+		LevelsFirstMembersToDisplay[MenuLevel]--;														//or "scroll up"
 		FirstMemberToDisplayPtr = FirstMemberToDisplayPtr->Prev;
 	}
 
@@ -111,9 +116,10 @@ void Menu_Next(void)
 {
 	if(MenuCurrentMember->Next != NULL)
 	{
-		MenuCurrentIndex++;
+//		MenuCurrentIndex++;
+//		MenuCurrentMember = MenuCurrentMember->Next;
+		LevelsIndexes[MenuLevel]++;
 		MenuCurrentMember = MenuCurrentMember->Next;
-
 	}
 	else
 	{
@@ -121,7 +127,8 @@ void Menu_Next(void)
 		{
 			MenuCurrentMember = MenuCurrentMember->Prev;
 		}
-		MenuCurrentIndex = 0;
+		//MenuCurrentIndex = 0;
+		LevelsIndexes[MenuLevel] = 0;
 	}
 	Menu_RefreshScreen();
 }
@@ -130,15 +137,19 @@ void Menu_Prev(void)
 {
 	if(MenuCurrentMember->Prev != NULL)
 	{
-		MenuCurrentIndex--;
+//		MenuCurrentIndex--;
+//		MenuCurrentMember = MenuCurrentMember->Prev;
+		LevelsIndexes[MenuLevel]--;
 		MenuCurrentMember = MenuCurrentMember->Prev;
 	}
 	else
 	{
 		while(MenuCurrentMember->Next != NULL)
 		{
-			MenuCurrentIndex++;
+//			MenuCurrentIndex++;
+//			MenuCurrentMember = MenuCurrentMember->Next;
 			MenuCurrentMember = MenuCurrentMember->Next;
+			LevelsIndexes[MenuLevel]++;
 		}
 	}
 	Menu_RefreshScreen();
@@ -169,10 +180,14 @@ void Menu_Select(void)
 {
 	if(MenuCurrentMember->Child != NULL)				//if there is a child...
 	{
-		MenuCurrentMember = MenuCurrentMember->Child;	//set current menu member to child
-		MenuCurrentIndex = 0;
-		FirstMemberToDisplayPtr = MenuCurrentMember;	//set first member to display to current member (child)
-		FirstMemberToDisplayNumber = 0;
+//		MenuCurrentMember = MenuCurrentMember->Child;	//set current menu member to child
+//		MenuCurrentIndex = 0;
+//		FirstMemberToDisplayPtr = MenuCurrentMember;	//set first member to display to current member (child)
+//		FirstMemberToDisplayNumber = 0;
+		MenuCurrentMember = MenuCurrentMember->Child;
+		MenuLevel++;
+
+
 	}
 	if(MenuCurrentMember->FunctionPtr != NULL)			//if there is a function pointer...
 	{

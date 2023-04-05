@@ -9,6 +9,7 @@
 #define MENU_MENU_H_
 
 #define MENU_ROWS_TO_DISPLAY 6
+#define MENU_MAX_LEVELS_NUMBER 4
 #define MENU_FIRST_MEMBER &Member1
 
 typedef struct Menu_Struct Menu_t;
