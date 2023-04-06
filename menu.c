@@ -9,19 +9,9 @@
 #include "string.h"
 #include "../oled_ssd1106/ssd1106.h"
 
-
-
-Menu_t *MenuCurrentMember = MENU_FIRST_MEMBER;
-uint8_t MenuCurrentIndex;
-
-Menu_t *FirstMemberToDisplayPtr = MENU_FIRST_MEMBER;
-uint8_t FirstMemberToDisplayNumber;
-
-
-uint8_t LevelsIndexes[MENU_MAX_LEVELS_NUMBER];
-uint8_t LevelsFirstMembersToDisplay[MENU_MAX_LEVELS_NUMBER];
-uint8_t MenuLevel;
-
+//
+//TODO: 1. Define here your menu members, remember to add extern declarations in menu.h file!
+//
 /*--------------Name, *Next, *Prev, *Child, *Parent, *Function---
  * WARNING: First member's *Prev pointer have to be NULL,
  * & Last member's *Next pointer have to be NULL!  */
@@ -61,7 +51,24 @@ Menu_t Member10 = {"Sushi", &Member11, &Member9, &Member10_1, NULL, NULL};
 
 Menu_t Member11 = {"Flaki", NULL, &Member10, &Member11_1, NULL, NULL};
 		Menu_t Member11_1 = {"Test", NULL, NULL, NULL, &Member11, NULL};
+//
+//End of member list
+//
 
+
+//
+//Global variables
+//
+static Menu_t *MenuCurrentMember = MENU_FIRST_MEMBER;
+static Menu_t *FirstMemberToDisplayPtr = MENU_FIRST_MEMBER;
+
+static uint8_t LevelsIndexes[MENU_MAX_LEVELS_NUMBER];
+static uint8_t LevelsFirstMembersToDisplay[MENU_MAX_LEVELS_NUMBER];
+static uint8_t MenuLevel;
+
+//
+//Functions
+//
 
 void Menu_RefreshScreen(void)
 {
@@ -74,12 +81,12 @@ void Menu_RefreshScreen(void)
 
 	while(LevelsIndexes[MenuLevel] > (LevelsFirstMembersToDisplay[MenuLevel] + MENU_ROWS_TO_DISPLAY - 1) )		//while our menu member is in out of screen range...
 	{
-		LevelsFirstMembersToDisplay[MenuLevel]++;														//"scroll down" by increasing first to display member
+		LevelsFirstMembersToDisplay[MenuLevel]++;																//"scroll down" by increasing first to display member
 		FirstMemberToDisplayPtr = FirstMemberToDisplayPtr->Next;
 	}
 	while(LevelsIndexes[MenuLevel] < LevelsFirstMembersToDisplay[MenuLevel] )
 	{
-		LevelsFirstMembersToDisplay[MenuLevel]--;														//or "scroll up"
+		LevelsFirstMembersToDisplay[MenuLevel]--;																//or "scroll up"
 		FirstMemberToDisplayPtr = FirstMemberToDisplayPtr->Prev;
 	}
 
@@ -98,13 +105,13 @@ void Menu_RefreshScreen(void)
 			OLED_WriteString((char*)Tmp->Name, WHITE);
 			OLED_WriteString(" <<", WHITE);
 		}
-		else
+		else																				//if not, just print it
 		{
 			CenterCalculate = ((DISPLAY_WIDTH - (strlen(Tmp->Name) * 6) ) / 2);
 			OLED_MoveCursor(CenterCalculate, (i+1)*8);
 			OLED_WriteString((char*)Tmp->Name, WHITE);
 		}
-		i++;																				//increment member
+		i++;																				//increment for printing next member
 		Tmp = Tmp->Next;
 	}
 	OLED_SendBuffer();
@@ -116,20 +123,20 @@ void Menu_Next(void)
 {
 	if(MenuCurrentMember->Next != NULL)
 	{
-//		MenuCurrentIndex++;
-//		MenuCurrentMember = MenuCurrentMember->Next;
-		LevelsIndexes[MenuLevel]++;
-		MenuCurrentMember = MenuCurrentMember->Next;
+		MenuCurrentMember = MenuCurrentMember->Next;	//change current member pointer to next member
+		LevelsIndexes[MenuLevel]++;						//increase current level index
 	}
-	else
+#ifdef MENU_LOOPING
+	else												//if there is no next member, go to first member (looping)
 	{
 		while(MenuCurrentMember->Prev != NULL)
 		{
 			MenuCurrentMember = MenuCurrentMember->Prev;
 		}
-		//MenuCurrentIndex = 0;
 		LevelsIndexes[MenuLevel] = 0;
 	}
+#endif
+
 	Menu_RefreshScreen();
 }
 
@@ -137,21 +144,59 @@ void Menu_Prev(void)
 {
 	if(MenuCurrentMember->Prev != NULL)
 	{
-//		MenuCurrentIndex--;
-//		MenuCurrentMember = MenuCurrentMember->Prev;
-		LevelsIndexes[MenuLevel]--;
 		MenuCurrentMember = MenuCurrentMember->Prev;
+		LevelsIndexes[MenuLevel]--;
 	}
+#ifdef MENU_LOOPING
 	else
 	{
 		while(MenuCurrentMember->Next != NULL)
 		{
-//			MenuCurrentIndex++;
-//			MenuCurrentMember = MenuCurrentMember->Next;
 			MenuCurrentMember = MenuCurrentMember->Next;
 			LevelsIndexes[MenuLevel]++;
 		}
 	}
+#endif
+
+	Menu_RefreshScreen();
+}
+
+
+
+void Menu_Select(void)
+{
+	if(MenuCurrentMember->Child != NULL)				//if there is a child...
+	{
+		MenuCurrentMember = MenuCurrentMember->Child;
+		FirstMemberToDisplayPtr = MenuCurrentMember;
+		MenuLevel++;
+	}
+
+	if(MenuCurrentMember->FunctionPtr != NULL)			//if there is a function pointer...
+	{
+		MenuCurrentMember->FunctionPtr();
+	}
+
+	Menu_RefreshScreen();
+}
+
+void Menu_Back(void)
+{
+	uint8_t i;
+
+	if(MenuCurrentMember->Parent != NULL)
+	{
+		LevelsIndexes[MenuLevel] = 0;
+		MenuCurrentMember = MenuCurrentMember->Parent;
+		FirstMemberToDisplayPtr = MenuCurrentMember;
+		MenuLevel--;
+
+		for(i = 0; i < (LevelsIndexes[MenuLevel] - LevelsFirstMembersToDisplay[MenuLevel]) ; i++)
+		{
+			FirstMemberToDisplayPtr = FirstMemberToDisplayPtr->Prev;
+		}
+	}
+
 	Menu_RefreshScreen();
 }
 
@@ -174,62 +219,5 @@ uint8_t Menu_CountMembers(void)
 
 	return Counter;
 }
-
-
-void Menu_Select(void)
-{
-	if(MenuCurrentMember->Child != NULL)				//if there is a child...
-	{
-//		MenuCurrentMember = MenuCurrentMember->Child;	//set current menu member to child
-//		MenuCurrentIndex = 0;
-//		FirstMemberToDisplayPtr = MenuCurrentMember;	//set first member to display to current member (child)
-//		FirstMemberToDisplayNumber = 0;
-		MenuCurrentMember = MenuCurrentMember->Child;
-		MenuLevel++;
-
-
-	}
-	if(MenuCurrentMember->FunctionPtr != NULL)			//if there is a function pointer...
-	{
-		MenuCurrentMember->FunctionPtr();
-	}
-	Menu_RefreshScreen();
-}
-
-void Menu_Back(void)				//TODO: improve calculating for first member to display after getting back to parent
-{
-	Menu_t *Tmp;
-	uint8_t Index = 0;
-	uint8_t MembersCount;
-
-	if(MenuCurrentMember->Parent != NULL)
-	{
-		MenuCurrentMember = MenuCurrentMember->Parent;
-
-		FirstMemberToDisplayPtr = MenuCurrentMember;
-
-		Tmp = MenuCurrentMember;					//Calculate number of recently set parent
-		while(Tmp->Prev != NULL)
-		{
-			Index++;
-			Tmp = Tmp->Prev;
-		}
-		MenuCurrentIndex = Index;
-
-
-		MembersCount = Menu_CountMembers();				//set proper first member to display
-		FirstMemberToDisplayNumber = Index;
-		while(MembersCount - FirstMemberToDisplayNumber < MENU_ROWS_TO_DISPLAY)
-		{
-			FirstMemberToDisplayPtr = FirstMemberToDisplayPtr->Prev;
-			FirstMemberToDisplayNumber--;
-		}
-
-
-	}
-
-	Menu_RefreshScreen();
-}
-
 
 
